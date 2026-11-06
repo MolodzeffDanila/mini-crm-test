@@ -1,0 +1,27 @@
+export type Role = 'poster' | 'executor'
+
+export type Site = {
+  id: string
+  name: string
+  address: string
+}
+
+export type TaskStatus = 'new' | 'in_progress' | 'review' | 'accepted' | 'rework'
+
+export type Task = {
+  id: string
+  title: string
+  description: string
+  status: TaskStatus
+  site_id: string
+  assignee_id: string | null
+  created_at: string
+}
+
+export const taskStatusLabels: Record<TaskStatus, string> = {
+  new: 'Новая',
+  in_progress: 'В работе',
+  review: 'На проверке',
+  accepted: 'Принята',
+  rework: 'На доработке',
+}
