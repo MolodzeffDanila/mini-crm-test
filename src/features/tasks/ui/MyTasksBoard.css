@@ -1,0 +1,4 @@
+.task-link{display:flex;width:100%;flex-direction:column;gap:5px;padding:11px;border:1px solid transparent;border-radius:6px;background:#fff;text-align:left;color:#344037}
+.task-link.chosen{background:#f5f8f2;border-color:#dfe8da}
+.task-link b{font-size:11px}
+.task-link small{font-size:9px;color:#89948b}

@@ -1,5 +1,6 @@
-import { Brand } from '../../components/Brand';
-import type { WorkspaceView } from './useWorkspace';
+import { Brand } from '../../../components/Brand';
+import './SideMenu.css';
+import type { WorkspaceView } from '../model/useWorkspace';
 
 interface SideMenuProps {
   mine: boolean;

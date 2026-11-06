@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import type { Session } from '@supabase/supabase-js';
 
-import type { AuthProfile } from '../auth/useAuth';
-import type { Site, Task } from '../../types/domain';
+import type { AuthProfile } from '../../auth';
+import type { Site, Task } from '../../../types/domain';
 
 export type WorkspaceView = 'objects' | 'my_tasks';
 
