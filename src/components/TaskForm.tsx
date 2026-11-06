@@ -2,12 +2,13 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import type { Site, Task } from '../types/domain'
 import type { TaskInput } from '../entities/task/api/task.api'
+import type { Executor } from '../features/tasks'
 import './TaskForm.css'
 
 type TaskFormProps = {
   task?: Task
   sites: Site[]
-  executors: { id: string }[]
+  executors: Executor[]
   initialObjectId: string
   busy: boolean
   onSave: (input: TaskInput) => Promise<void>
@@ -71,7 +72,7 @@ export function TaskForm({
             Исполнитель
             <select required value={assigneeId} onChange={(event) => setAssigneeId(event.target.value)}>
               <option value="" disabled>Выберите исполнителя</option>
-              {executors.map((executor) => <option key={executor.id} value={executor.id}>{executor.id}</option>)}
+              {executors.map((executor) => <option key={executor.id} value={executor.id}>{executor.display_name || executor.id}</option>)}
             </select>
           </label>
           <div className="dialog-actions">

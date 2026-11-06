@@ -66,7 +66,7 @@ export default function App() {
         tasksCount={workspace.visibleTasks.length}
         view={view}
         onViewChange={setView}
-        userLabel={auth.profile.display_name ?? auth.session.user.email}
+        userLabel={auth.session.user.email}
         signOutBusy={auth.busy}
         onSignOut={auth.signOut}
       />

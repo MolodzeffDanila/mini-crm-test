@@ -59,6 +59,7 @@
 |---|---|---|
 | id | UUID | ID пользователя, связь с auth.users |
 | role | TEXT | Роль пользователя |
+| display_name | TEXT | Отображаемое имя в интерфейсе |
 
 Допустимые роли:
 - `manager`
@@ -69,7 +70,6 @@
 - Пользователь может читать собственный профиль.
 - Manager может читать профили всех пользователей.
 - Executor не может читать профили других пользователей.
-- В таблице нет поля `display_name`.
 
 ### 3.2. objects
 
@@ -192,9 +192,9 @@
 
 Запрос:
 
-`profiles.select('id, role').eq('id', userId).single()`
+`profiles.select('id, role, display_name').eq('id', userId).single()`
 
-Профиль используется для определения роли и настройки интерфейса.
+Профиль используется для определения роли и отображаемого имени пользователя.
 
 ---
 
@@ -460,6 +460,7 @@ export type TaskStatus =
 export interface Profile {
   id: string;
   role: Role;
+  display_name: string;
 }
 
 export interface ObjectEntity {
@@ -492,7 +493,7 @@ export interface TaskStatusHistory {
 
 Типы должны соответствовать реальной схеме PostgreSQL.
 
-Не использовать `site_id`, `rework`, `transition_task` и `display_name` в контрактах БД.
+Не использовать `site_id`, `rework` и `transition_task` в контрактах БД.
 
 ---
 

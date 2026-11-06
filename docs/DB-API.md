@@ -85,13 +85,14 @@ export const supabase = isSupabaseConfigured ? createClient(url, key) : null;
 |---|---|---|
 | id | UUID | Совпадает с `auth.users.id` |
 | role | TEXT | `manager` или `executor` |
+| display_name | TEXT | Отображаемое имя в интерфейсе |
 
 Запрос:
 
 ```ts
 const { data, error } = await supabase
   .from('profiles')
-  .select('id, role')
+  .select('id, role, display_name')
   .single();
 ```
 
@@ -124,6 +125,7 @@ const { data, error } = await supabase
 |---|---|
 | id | UUID |
 | role | TEXT |
+| display_name | TEXT |
 
 ### 4.2. objects
 

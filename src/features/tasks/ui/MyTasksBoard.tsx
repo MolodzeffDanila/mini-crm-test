@@ -32,7 +32,7 @@ export function MyTasksBoard({ workspace, taskState, sites, selectedTaskId, onSe
           const task = visibleTasks.find((item) => item.id === selectedTaskId) ?? visibleTasks[0];
           const taskObject = sites.find((item) => item.id === task?.object_id);
           return task && taskObject
-            ? <TaskCard task={task} object={taskObject} role="executor" act={taskState.changeStatus} />
+            ? <TaskCard task={task} object={taskObject} role="executor" userNames={workspace.userNames} act={taskState.changeStatus} />
             : <div className="empty"><p>Выберите задачу из списка.</p></div>;
         })()}
       </section>

@@ -19,9 +19,15 @@ export interface UseTasksDeps {
   selectObject?: (objectId: string) => void;
 }
 
+/** Исполнитель для назначения на задачу: значение — id, подпись — имя */
+export interface Executor {
+  id: string;
+  display_name: string;
+}
+
 export interface UseTasksResult {
   tasks: Task[];
-  executors: { id: string }[];
+  executors: Executor[];
   tasksLoaded: boolean;
   saving: boolean;
   tasksError: string;
@@ -49,7 +55,7 @@ export interface UseTasksResult {
  */
 export function useTasks(session: Session | null, deps: UseTasksDeps = {}): UseTasksResult {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [executors, setExecutors] = useState<{ id: string }[]>([]);
+  const [executors, setExecutors] = useState<Executor[]>([]);
   const [tasksLoaded, setTasksLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [tasksError, setTasksError] = useState('');
@@ -84,7 +90,7 @@ export function useTasks(session: Session | null, deps: UseTasksDeps = {}): UseT
           .select(taskFields)
           .order('created_at', { ascending: false }),
 
-        supabase.from('profiles').select('id').eq('role', 'executor'),
+        supabase.from('profiles').select('id, display_name').eq('role', 'executor'),
       ]);
 
       if (!live) return;

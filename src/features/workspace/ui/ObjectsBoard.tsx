@@ -69,6 +69,7 @@ export function ObjectsBoard({ workspace, objectState, taskState, selection, isM
               task={task}
               object={site!}
               role={isManager ? 'manager' : 'executor'}
+              userNames={workspace.userNames}
               act={taskState.changeStatus}
               onEdit={taskState.openTaskForm}
               onDelete={taskState.handleRemoveTask}
