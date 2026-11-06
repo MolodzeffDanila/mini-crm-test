@@ -1,5 +1,11 @@
 export type Role = 'manager' | 'executor'
 
+export type Profile = {
+  id: string
+  role: Role
+  display_name: string
+}
+
 export type Site = {
   id: string
   name: string

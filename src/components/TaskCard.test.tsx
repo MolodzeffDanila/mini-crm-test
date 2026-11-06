@@ -51,11 +51,18 @@ describe('TaskCard role actions', () => {
 
   it('renders task data and invokes the status callback', () => {
     const act = vi.fn()
-    render(<TaskCard task={task} object={object} role="executor" act={act} />)
+    const userNames = { 'executor-1': 'Иван Исполнитель', 'manager-1': 'Мария Менеджер' }
+    render(<TaskCard task={task} object={object} role="executor" userNames={userNames} act={act} />)
     expect(screen.getByText('Корпус А · Москва')).toBeTruthy()
-    expect(screen.getByText('executor-1')).toBeTruthy()
-    expect(screen.getByText('manager-1')).toBeTruthy()
+    expect(screen.getByText('Иван Исполнитель')).toBeTruthy()
+    expect(screen.getByText('Мария Менеджер')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Взять в работу' }))
     expect(act).toHaveBeenCalledWith(task, 'in_progress')
+  })
+
+  it('falls back to the raw id when a user has no display name', () => {
+    render(<TaskCard task={task} object={object} role="manager" act={vi.fn()} />)
+    expect(screen.getByText('executor-1')).toBeTruthy()
+    expect(screen.getByText('manager-1')).toBeTruthy()
   })
 })

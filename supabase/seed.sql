@@ -57,3 +57,15 @@ begin
 end;
 $$;
 commit;
+
+-- Display names for the demo accounts (idempotent; safe to re-run).
+update public.profiles p
+set display_name = case u.email
+  when 'manager@test.com' then 'Менеджер'
+  when 'executor1@test.com' then 'Исполнитель 1'
+  when 'executor2@test.com' then 'Исполнитель 2'
+  else p.display_name
+end
+from auth.users u
+where u.id = p.id
+  and u.email in ('manager@test.com', 'executor1@test.com', 'executor2@test.com');

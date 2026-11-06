@@ -11,12 +11,16 @@ type TaskCardProps = {
   task: Task
   object: Site
   role?: Role
+  /** id пользователя → отображаемое имя (profiles.display_name); без подписи показываем id */
+  userNames?: Record<string, string>
   act: (task: Task, status: TaskStatus, comment?: string) => void
   onEdit?: (task: Task) => void
   onDelete?: (task: Task) => void
 }
 
-export function TaskCard({ task, object, role, act, onEdit, onDelete }: TaskCardProps) {
+export function TaskCard({ task, object, role, userNames = {}, act, onEdit, onDelete }: TaskCardProps) {
+  const userName = (id: string | null | undefined): string | null =>
+    id ? (userNames[id] ?? id) : null
   const [historyOpen, setHistoryOpen] = useState(false)
   const [history, setHistory] = useState<TaskStatusHistory[]>([])
   const [historyError, setHistoryError] = useState('')
@@ -67,8 +71,8 @@ export function TaskCard({ task, object, role, act, onEdit, onDelete }: TaskCard
       <dl className="task-details">
         <div><dt>ID задачи</dt><dd>{task.id}</dd></div>
         <div><dt>Объект</dt><dd>{object.name} · {object.address}</dd></div>
-        <div><dt>Исполнитель</dt><dd>{task.assignee_id ?? 'Не назначен'}</dd></div>
-        <div><dt>Автор</dt><dd>{task.author_id}</dd></div>
+        <div><dt>Исполнитель</dt><dd>{userName(task.assignee_id) ?? 'Не назначен'}</dd></div>
+        <div><dt>Автор</dt><dd>{userName(task.author_id) ?? task.author_id}</dd></div>
         <div><dt>Создана</dt><dd>{new Date(task.created_at).toLocaleString('ru-RU')}</dd></div>
       </dl>
       <button className="history-toggle" onClick={() => { setHistoryOpen((open) => !open); setHistoryLoading(!historyOpen); }}>
@@ -80,7 +84,7 @@ export function TaskCard({ task, object, role, act, onEdit, onDelete }: TaskCard
         {!historyError && history.length === 0 && <small>История пока пуста.</small>}
         {history.map((entry) => <div className="history-entry" key={entry.id}>
           <b>{entry.from_status ? taskStatusLabels[entry.from_status] : 'Создана'} → {taskStatusLabels[entry.to_status]}</b>
-          <small>{entry.changed_by} · {new Date(entry.created_at).toLocaleString('ru-RU')}</small>
+          <small>{userName(entry.changed_by) ?? entry.changed_by} · {new Date(entry.created_at).toLocaleString('ru-RU')}</small>
           {entry.comment && <p>{entry.comment}</p>}
         </div>)}
       </div>}

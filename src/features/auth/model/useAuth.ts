@@ -4,7 +4,7 @@ import type { Session } from '@supabase/supabase-js';
 
 import { supabase } from '../../../lib/supabase';
 import {
-  fetchProfileRole,
+  fetchProfile,
   fetchSession,
   signInWithPassword,
   signOutUser,
@@ -85,11 +85,11 @@ export function useAuth(): UseAuthResult {
     let live = true;
 
     void (async () => {
-      const role = await fetchProfileRole(session.user.id);
+      const profile = await fetchProfile(session.user.id);
 
       if (!live) return;
 
-      if (!role) {
+      if (!profile) {
         console.error('Profile loading error: profile or role not found');
         setProfile(null);
         setProfileError(true);
@@ -99,8 +99,8 @@ export function useAuth(): UseAuthResult {
 
       setProfileError(false);
       setProfile({
-        role,
-        display_name: session.user.email ?? '',
+        role: profile.role,
+        display_name: profile.display_name || session.user.email || '',
       });
     })();
 
