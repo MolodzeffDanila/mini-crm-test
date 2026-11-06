@@ -2,8 +2,15 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { Session } from '@supabase/supabase-js';
 
-import { supabase } from '../../lib/supabase';
-import type { Role } from '../../types/domain';
+import { supabase } from '../../../lib/supabase';
+import {
+  fetchProfileRole,
+  fetchSession,
+  signInWithPassword,
+  signOutUser,
+  subscribeToAuthState,
+} from '../api/auth.api';
+import type { Role } from '../../../types/domain';
 
 export interface AuthProfile {
   role: Role;
@@ -46,9 +53,7 @@ export function useAuth(): UseAuthResult {
   useEffect(() => {
     if (!supabase) return;
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const subscription = subscribeToAuthState((nextSession) => {
       setSession(nextSession);
       setAuthLoading(false);
       if (!nextSession) {
@@ -57,18 +62,16 @@ export function useAuth(): UseAuthResult {
       }
     });
 
-    void supabase.auth.getSession().then(({ data, error: sessionError }) => {
-      if (sessionError) {
+    fetchSession()
+      .then((currentSession) => {
+        setSession(currentSession);
+        setAuthLoading(false);
+      })
+      .catch((sessionError: unknown) => {
         console.error('Session restore error:', sessionError);
         setAuthError('Не удалось восстановить сессию. Войдите снова.');
-      }
-      setSession(data.session);
-      setAuthLoading(false);
-    }).catch((sessionError: unknown) => {
-      console.error('Session restore error:', sessionError);
-      setAuthError('Не удалось восстановить сессию. Войдите снова.');
-      setAuthLoading(false);
-    });
+        setAuthLoading(false);
+      });
 
     return () => {
       subscription.unsubscribe();
@@ -82,16 +85,12 @@ export function useAuth(): UseAuthResult {
     let live = true;
 
     void (async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .single();
+      const role = await fetchProfileRole(session.user.id);
 
       if (!live) return;
 
-      if (error || !data || (data.role !== 'manager' && data.role !== 'executor')) {
-        console.error('Profile loading error:', error);
+      if (!role) {
+        console.error('Profile loading error: profile or role not found');
         setProfile(null);
         setProfileError(true);
         setAuthError('Не удалось определить роль пользователя. Обратитесь к администратору.');
@@ -100,7 +99,7 @@ export function useAuth(): UseAuthResult {
 
       setProfileError(false);
       setProfile({
-        role: data.role,
+        role,
         display_name: session.user.email ?? '',
       });
     })();
@@ -116,11 +115,7 @@ export function useAuth(): UseAuthResult {
     setBusy(true);
     setAuthError('');
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        console.error('Sign in error:', error);
-        setAuthError('Не удалось войти. Проверьте email и пароль.');
-      }
+      await signInWithPassword(email, password);
     } catch (signInError) {
       console.error('Sign in error:', signInError);
       setAuthError('Не удалось войти. Проверьте email и пароль.');
@@ -134,11 +129,7 @@ export function useAuth(): UseAuthResult {
 
     setBusy(true);
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Sign out error:', error);
-        setAuthError('Не удалось выйти из системы. Повторите попытку.');
-      }
+      await signOutUser();
     } catch (signOutError) {
       console.error('Sign out error:', signOutError);
       setAuthError('Не удалось выйти из системы. Повторите попытку.');

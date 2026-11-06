@@ -1,5 +1,5 @@
-import { Brand } from '../../components/Brand';
-import type { UseAuthResult } from './useAuth';
+import { Brand } from '../../../components/Brand';
+import type { UseAuthResult } from '../model/useAuth';
 
 export function LoginForm({ auth }: { auth: UseAuthResult }) {
   const {

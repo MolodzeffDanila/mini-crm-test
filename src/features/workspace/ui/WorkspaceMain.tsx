@@ -1,11 +1,11 @@
-import { TaskForm } from '../../components/TaskForm';
-import { ObjectForm } from '../../components/ObjectForm';
-import type { UseAuthResult } from '../auth/useAuth';
-import type { UseTasksResult } from '../tasks/useTasks';
-import type { UseObjectsResult } from '../objects/useObjects';
-import type { UseSelectionResult } from './useSelection';
-import type { UseWorkspaceResult, WorkspaceView } from './useWorkspace';
-import { MyTasksBoard } from '../tasks/MyTasksBoard';
+import { TaskForm } from '../../../components/TaskForm';
+import { ObjectForm } from '../../../components/ObjectForm';
+import type { UseAuthResult } from '../../auth';
+import type { UseTasksResult } from '../../tasks';
+import { MyTasksBoard } from '../../tasks';
+import type { UseObjectsResult } from '../../objects';
+import type { UseSelectionResult } from '../model/useSelection';
+import type { UseWorkspaceResult, WorkspaceView } from '../model/useWorkspace';
 import { ObjectsBoard } from './ObjectsBoard';
 
 interface WorkspaceMainProps {

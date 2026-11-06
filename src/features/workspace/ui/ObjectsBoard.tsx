@@ -1,8 +1,8 @@
-import { TaskCard } from '../../components/TaskCard';
-import type { UseObjectsResult } from '../objects/useObjects';
-import type { UseTasksResult } from '../tasks/useTasks';
-import type { UseSelectionResult } from './useSelection';
-import type { UseWorkspaceResult } from './useWorkspace';
+import { TaskCard } from '../../../components/TaskCard';
+import type { UseObjectsResult } from '../../objects';
+import type { UseTasksResult } from '../../tasks';
+import type { UseSelectionResult } from '../model/useSelection';
+import type { UseWorkspaceResult } from '../model/useWorkspace';
 
 interface ObjectsBoardProps {
   workspace: UseWorkspaceResult;

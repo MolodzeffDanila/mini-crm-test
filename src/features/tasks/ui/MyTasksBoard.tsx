@@ -1,8 +1,9 @@
-import { TaskCard } from '../../components/TaskCard';
-import { taskStatusLabels } from '../../types/domain';
-import type { Site } from '../../types/domain';
-import type { UseTasksResult } from './useTasks';
-import type { UseWorkspaceResult } from '../workspace/useWorkspace';
+import { TaskCard } from '../../../components/TaskCard';
+import './MyTasksBoard.css';
+import { taskStatusLabels } from '../../../types/domain';
+import type { Site } from '../../../types/domain';
+import type { UseTasksResult } from '../model/useTasks';
+import type { UseWorkspaceResult } from '../../workspace';
 
 interface MyTasksBoardProps {
   workspace: UseWorkspaceResult;
