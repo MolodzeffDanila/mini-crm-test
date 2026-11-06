@@ -6,7 +6,9 @@ import type { Session } from '@supabase/supabase-js';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
 import { Brand } from '../components/Brand';
 import { TaskCard } from '../components/TaskCard';
-import type { Role, Site, Task } from '../types/domain';
+import { TaskForm } from '../components/TaskForm';
+import { changeTaskStatus, createTask, deleteTask, updateTask } from '../entities/task/api/task.api';
+import type { Role, Site, Task, TaskStatus } from '../types/domain';
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -18,6 +20,10 @@ export default function App() {
 
   const [sites, setSites] = useState<Site[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [executors, setExecutors] = useState<{ id: string }[]>([]);
+  const [taskFormOpen, setTaskFormOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | undefined>();
+  const [savingTask, setSavingTask] = useState(false);
 
   const [selected, setSelected] = useState('');
   const [loadedFor, setLoadedFor] = useState('');
@@ -53,7 +59,7 @@ export default function App() {
     let live = true;
 
     void (async () => {
-      const [p, s, t] = await Promise.all([
+      const [p, s, t, e] = await Promise.all([
         supabase
           .from('profiles')
           .select('role')
@@ -71,17 +77,20 @@ export default function App() {
             'id, title, description, status, object_id, assignee_id, created_at',
           )
           .order('created_at', { ascending: false }),
+
+        supabase.from('profiles').select('id').eq('role', 'executor'),
       ]);
 
       if (!live) return;
 
       setError('');
 
-      if (p.error || s.error || t.error) {
+      if (p.error || s.error || t.error || e.error) {
         console.error('Supabase loading error:', {
           profile: p.error,
           objects: s.error,
           tasks: t.error,
+          executors: e.error,
         });
 
         setError('Не удалось загрузить данные. Проверьте права доступа.');
@@ -98,12 +107,8 @@ export default function App() {
 
       setSites((s.data ?? []) as Site[]);
 
-      setTasks(
-        (t.data ?? []).map((task) => ({
-          ...task,
-          site_id: task.object_id,
-        })) as Task[],
-      );
+      setTasks((t.data ?? []) as Task[]);
+      setExecutors(e.data ?? []);
 
       if (s.data?.length) {
         setSelected((current) => current || s.data[0].id);
@@ -140,7 +145,7 @@ export default function App() {
   }
 
   // Change task status
-  async function act(task: Task, status: string) {
+  async function act(task: Task, status: TaskStatus) {
     if (!supabase) return;
 
     const comment =
@@ -150,11 +155,7 @@ export default function App() {
 
     if (status === 'revision' && !comment?.trim()) return;
 
-    const { error } = await supabase.rpc('change_task_status', {
-      p_task_id: task.id,
-      p_new_status: status,
-      p_comment: comment?.trim() || null,
-    });
+    const { error } = await changeTaskStatus(task.id, status, comment?.trim() || null);
 
     if (error) {
       console.error('Status transition error:', error);
@@ -179,13 +180,52 @@ export default function App() {
       return;
     }
 
-    setTasks(
-      (data ?? []).map((task) => ({
-        ...task,
-        site_id: task.object_id,
-      })) as Task[],
-    );
+    setTasks((data ?? []) as Task[]);
 
+    setError('');
+  }
+
+  async function saveTask(input: import('../entities/task/api/task.api').TaskInput) {
+    if (!session) return;
+    setSavingTask(true);
+    const result = editingTask
+      ? await updateTask(editingTask.id, input)
+      : await createTask(input, session.user.id);
+    if (result.error) {
+      console.error('Task save error:', result.error);
+      setError('Не удалось сохранить задачу. Проверьте введённые данные и права доступа.');
+      setSavingTask(false);
+      return;
+    }
+
+    const { data, error: reloadError } = await supabase!
+      .from('tasks')
+      .select('id, title, description, status, object_id, assignee_id, created_at')
+      .order('created_at', { ascending: false });
+    if (reloadError) {
+      console.error('Tasks reload error:', reloadError);
+      setError('Задача сохранена, но список не удалось обновить.');
+      setSavingTask(false);
+      return;
+    }
+
+    setTasks((data ?? []) as Task[]);
+    setSelected(input.object_id);
+    setTaskFormOpen(false);
+    setEditingTask(undefined);
+    setError('');
+    setSavingTask(false);
+  }
+
+  async function removeTask(task: Task) {
+    if (!window.confirm(`Удалить задачу «${task.title}»?`)) return;
+    const { error } = await deleteTask(task.id);
+    if (error) {
+      console.error('Task delete error:', error);
+      setError('Не удалось удалить задачу. Проверьте права доступа.');
+      return;
+    }
+    setTasks((current) => current.filter((item) => item.id !== task.id));
     setError('');
   }
 
@@ -289,7 +329,7 @@ export default function App() {
     : tasks;
 
   const allowedSites = new Set(
-    visibleTasks.map((task) => task.site_id),
+    visibleTasks.map((task) => task.object_id),
   );
 
   const visibleSites = mine
@@ -301,7 +341,7 @@ export default function App() {
     visibleSites[0];
 
   const siteTasks = visibleTasks.filter(
-    (task) => task.site_id === site?.id,
+    (task) => task.object_id === site?.id,
   );
 
   return (
@@ -349,16 +389,12 @@ export default function App() {
               </p>
             </div>
 
-            {!mine && (
+            {profile?.role === 'manager' && (
               <button
                 className="primary"
-                onClick={() =>
-                  setError(
-                    'Форма создания объекта будет добавлена следующим этапом.',
-                  )
-                }
+                onClick={() => { setEditingTask(undefined); setTaskFormOpen(true); }}
               >
-                ＋ Новый объект
+                ＋ Новая задача
               </button>
             )}
           </div>
@@ -431,7 +467,7 @@ export default function App() {
                     <small>
                       {
                         visibleTasks.filter(
-                          (task) => task.site_id === site.id,
+                          (task) => task.object_id === site.id,
                         ).length
                       }{' '}
                       задач
@@ -461,6 +497,8 @@ export default function App() {
                       task={task}
                       role={profile?.role}
                       act={act}
+                      onEdit={(task) => { setEditingTask(task); setTaskFormOpen(true); }}
+                      onDelete={removeTask}
                     />
                   ))
                 )}
@@ -474,6 +512,17 @@ export default function App() {
           </footer>
         </section>
       </main>
+      {taskFormOpen && profile?.role === 'manager' && (
+        <TaskForm
+          task={editingTask}
+          sites={sites}
+          executors={executors}
+          initialObjectId={selected}
+          busy={savingTask}
+          onSave={saveTask}
+          onCancel={() => { setTaskFormOpen(false); setEditingTask(undefined); }}
+        />
+      )}
     </div>
   );
 }

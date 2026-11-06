@@ -11,9 +11,9 @@ export type TaskStatus = 'new' | 'in_progress' | 'review' | 'accepted' | 'revisi
 export type Task = {
   id: string
   title: string
-  description: string
+  description: string | null
   status: TaskStatus
-  site_id: string
+  object_id: string
   assignee_id: string | null
   created_at: string
 }
