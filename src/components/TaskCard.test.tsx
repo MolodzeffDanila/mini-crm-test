@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { TaskCard } from './TaskCard'
 import type { Site, Task } from '../types/domain'
@@ -28,6 +28,19 @@ describe('TaskCard role actions', () => {
     render(<TaskCard task={{ ...task, status: 'review' }} object={object} role="manager" act={vi.fn()} />)
     expect(screen.getByRole('button', { name: 'Принять' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Вернуть на доработку' })).toBeTruthy()
+  })
+
+  it('collects a required revision comment in the in-app dialog', () => {
+    const act = vi.fn()
+    render(<TaskCard task={{ ...task, status: 'review' }} object={object} role="manager" act={act} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Вернуть на доработку' }))
+    expect(screen.getByRole('dialog')).toBeTruthy()
+    const submit = within(screen.getByRole('dialog')).getByRole('button', { name: 'Вернуть на доработку' })
+    expect(submit).toHaveProperty('disabled', true)
+    fireEvent.change(screen.getByLabelText('Укажите, что нужно исправить'), { target: { value: 'Проверить крепления' } })
+    expect(submit).toHaveProperty('disabled', false)
+    fireEvent.click(submit)
+    expect(act).toHaveBeenCalledWith({ ...task, status: 'review' }, 'revision', 'Проверить крепления')
   })
 
   it('does not show manager transition controls to an executor', () => {

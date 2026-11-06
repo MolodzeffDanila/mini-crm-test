@@ -11,7 +11,7 @@ type TaskCardProps = {
   task: Task
   object: Site
   role?: Role
-  act: (task: Task, status: TaskStatus) => void
+  act: (task: Task, status: TaskStatus, comment?: string) => void
   onEdit?: (task: Task) => void
   onDelete?: (task: Task) => void
 }
@@ -21,6 +21,8 @@ export function TaskCard({ task, object, role, act, onEdit, onDelete }: TaskCard
   const [history, setHistory] = useState<TaskStatusHistory[]>([])
   const [historyError, setHistoryError] = useState('')
   const [historyLoading, setHistoryLoading] = useState(false)
+  const [revisionOpen, setRevisionOpen] = useState(false)
+  const [revisionComment, setRevisionComment] = useState('')
 
   useEffect(() => {
     if (!historyOpen) return
@@ -82,13 +84,28 @@ export function TaskCard({ task, object, role, act, onEdit, onDelete }: TaskCard
           {entry.comment && <p>{entry.comment}</p>}
         </div>)}
       </div>}
+      {revisionOpen && <div className="dialog-backdrop" role="presentation">
+        <section className="task-dialog" role="dialog" aria-modal="true" aria-labelledby={`revision-title-${task.id}`}>
+          <div className="dialog-heading">
+            <div><span className="eyebrow">ВОЗВРАТ НА ДОРАБОТКУ</span><h2 id={`revision-title-${task.id}`}>Комментарий исполнителю</h2></div>
+            <button type="button" className="dialog-close" aria-label="Закрыть" onClick={() => setRevisionOpen(false)}>×</button>
+          </div>
+          <label className="revision-label">Укажите, что нужно исправить
+            <textarea autoFocus rows={4} value={revisionComment} onChange={(event) => setRevisionComment(event.target.value)} />
+          </label>
+          <div className="dialog-actions">
+            <button type="button" className="secondary" onClick={() => setRevisionOpen(false)}>Отмена</button>
+            <button type="button" className="primary" disabled={!revisionComment.trim()} onClick={() => { act(task, 'revision', revisionComment.trim()); setRevisionOpen(false); setRevisionComment(''); }}>Вернуть на доработку</button>
+          </div>
+        </section>
+      </div>}
       {(actions.length > 0 || (role === 'manager' && (onEdit || onDelete))) && (
         <div className="actions">
           {actions.map(({ status, label }) => (
             <button
               className={status === 'revision' ? 'secondary' : 'primary'}
               key={status}
-              onClick={() => act(task, status)}
+              onClick={() => status === 'revision' ? setRevisionOpen(true) : act(task, status)}
             >
               {label}
             </button>
