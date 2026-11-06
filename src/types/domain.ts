@@ -1,4 +1,4 @@
-export type Role = 'poster' | 'executor'
+export type Role = 'manager' | 'executor'
 
 export type Site = {
   id: string
@@ -6,7 +6,7 @@ export type Site = {
   address: string
 }
 
-export type TaskStatus = 'new' | 'in_progress' | 'review' | 'accepted' | 'rework'
+export type TaskStatus = 'new' | 'in_progress' | 'review' | 'accepted' | 'revision'
 
 export type Task = {
   id: string
@@ -23,5 +23,5 @@ export const taskStatusLabels: Record<TaskStatus, string> = {
   in_progress: 'В работе',
   review: 'На проверке',
   accepted: 'Принята',
-  rework: 'На доработке',
+  revision: 'На доработке',
 }

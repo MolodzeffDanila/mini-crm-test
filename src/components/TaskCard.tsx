@@ -12,7 +12,7 @@ type TaskCardProps = {
 export function TaskCard({ task, role, act }: TaskCardProps) {
   let actions: TaskAction[] = []
   if (role === 'executor') {
-    if (task.status === 'new' || task.status === 'rework') {
+    if (task.status === 'new' || task.status === 'revision') {
       actions = [{ status: 'in_progress', label: 'Взять в работу' }]
     } else if (task.status === 'in_progress') {
       actions = [{ status: 'review', label: 'На проверку' }]
@@ -20,7 +20,7 @@ export function TaskCard({ task, role, act }: TaskCardProps) {
   } else if (task.status === 'review') {
     actions = [
       { status: 'accepted', label: 'Принять' },
-      { status: 'rework', label: 'Вернуть' },
+      { status: 'revision', label: 'Вернуть на доработку' },
     ]
   }
 
@@ -34,7 +34,7 @@ export function TaskCard({ task, role, act }: TaskCardProps) {
         <div className="actions">
           {actions.map(({ status, label }) => (
             <button
-              className={status === 'rework' ? 'secondary' : 'primary'}
+              className={status === 'revision' ? 'secondary' : 'primary'}
               key={status}
               onClick={() => act(task, status)}
             >
