@@ -548,39 +548,33 @@ Frontend скрывает недоступные действия в завис�
 
 ---
 
-## 12. Рекомендуемая структура API
+## 12. Фактическая структура API
+
+Реализация использует следующую раскладку (допускается адаптация без изменения контрактов взаимодействия с БД):
 
 ```text
 src/
-  shared/
-    api/
-      supabase.ts
-      database.types.ts
+  lib/
+    supabase.ts               единый Supabase Client (isSupabaseConfigured, supabase)
 
   entities/
-    profile/
-      api/
-        profile.api.ts
-
     object/
       api/
-        object.api.ts
-
+        object.api.ts         CRUD объектов
     task/
       api/
-        task.api.ts
-
-    task-history/
-      api/
-        task-history.api.ts
+        task.api.ts           CRUD задач + RPC change_task_status
+        task-history.api.ts   чтение истории задачи
 
   features/
     auth/
-      api/
-        auth.api.ts
+      useAuth.ts              сессия, профиль, роль, вход/выход
+
+  types/
+    domain.ts                 Role, TaskStatus, Task, TaskStatusHistory и подписи статусов
 ```
 
-Допускается адаптация структуры под существующую архитектуру проекта без изменения контрактов взаимодействия с БД.
+Клиент создаётся в `src/lib/supabase.ts`; модуль `src/shared/api/supabase.ts` из ранних версий спецификации удалён как дублирующий.
 
 ---
 

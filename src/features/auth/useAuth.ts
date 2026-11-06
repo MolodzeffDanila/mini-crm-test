@@ -29,7 +29,7 @@ export interface UseAuthResult {
 /**
  * Управляет состоянием авторизации: сессия Supabase Auth,
  * профиль и роль пользователя, вход и выход.
- * Роль определяется по таблице profiles (см. CONTRACT.md, раздел 4).
+ * Роль определяется по таблице profiles (см. docs/CONTRACT.md, раздел 4).
  */
 export function useAuth(): UseAuthResult {
   const [session, setSession] = useState<Session | null>(null);

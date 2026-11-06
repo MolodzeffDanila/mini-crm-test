@@ -36,7 +36,7 @@ export interface UseObjectsResult {
 
 /**
  * Управляет объектами рабочего пространства: загрузка с учётом RLS,
- * создание/редактирование/удаление (только manager; см. CONTRACT.md, раздел 5).
+ * создание/редактирование/удаление (только manager; см. docs/CONTRACT.md, раздел 5).
  */
 export function useObjects(session: Session | null, deps: UseObjectsDeps = {}): UseObjectsResult {
   const [sites, setSites] = useState<Site[]>([]);
