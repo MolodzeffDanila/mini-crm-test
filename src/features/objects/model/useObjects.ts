@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 
-import { supabase } from '../../lib/supabase';
-import { createObject, deleteObject, updateObject } from '../../entities/object/api/object.api';
-import type { Site } from '../../types/domain';
+import { supabase } from '../../../lib/supabase';
+import { createObject, deleteObject, updateObject } from '../../../entities/object/api/object.api';
+import type { Site } from '../../../types/domain';
 
 export type ObjectInput = { name: string; address: string };
 

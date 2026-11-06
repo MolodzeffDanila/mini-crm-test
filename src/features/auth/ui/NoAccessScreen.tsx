@@ -1,5 +1,5 @@
-import { Screen } from '../../components/Screen';
-import type { UseAuthResult } from '../auth/useAuth';
+import { Screen } from '../../../components/Screen';
+import type { UseAuthResult } from '../model/useAuth';
 
 export function NoAccessScreen({ auth }: { auth: UseAuthResult }) {
   return (

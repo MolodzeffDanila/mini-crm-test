@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../../lib/supabase';
 import {
   changeTaskStatus,
   createTask,
   deleteTask,
   updateTask,
-} from '../../entities/task/api/task.api';
-import type { TaskInput } from '../../entities/task/api/task.api';
-import type { Task, TaskStatus } from '../../types/domain';
+} from '../../../entities/task/api/task.api';
+import type { TaskInput } from '../../../entities/task/api/task.api';
+import type { Task, TaskStatus } from '../../../types/domain';
 
 const taskFields =
   'id, title, description, status, object_id, assignee_id, author_id, created_at';

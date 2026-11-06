@@ -1,18 +1,18 @@
 import { useState } from 'react';
 
 import { isSupabaseConfigured } from '../lib/supabase';
-import { useAuth } from '../features/auth/useAuth';
-import { LoginForm } from '../features/auth/LoginForm';
-import { useTasks } from '../features/tasks/useTasks';
-import { useObjects } from '../features/objects/useObjects';
-import { useSelection } from '../features/workspace/useSelection';
-import { useWorkspace } from '../features/workspace/useWorkspace';
-import type { WorkspaceView } from '../features/workspace/useWorkspace';
-import { SetupScreen } from '../features/workspace/SetupScreen';
-import { NoAccessScreen } from '../features/workspace/NoAccessScreen';
+import { useAuth, LoginForm, NoAccessScreen } from '../features/auth';
+import { useTasks } from '../features/tasks';
+import { useObjects } from '../features/objects';
+import {
+  useSelection,
+  useWorkspace,
+  SetupScreen,
+  SideMenu,
+  WorkspaceMain,
+} from '../features/workspace';
+import type { WorkspaceView } from '../features/workspace';
 import { Screen } from '../components/Screen';
-import { SideMenu } from '../features/workspace/SideMenu';
-import { WorkspaceMain } from '../features/workspace/WorkspaceMain';
 
 export default function App() {
   const auth = useAuth();
