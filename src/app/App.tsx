@@ -27,6 +27,8 @@ export default function App() {
 
   const [selected, setSelected] = useState('');
   const [loadedFor, setLoadedFor] = useState('');
+  const [authLoading, setAuthLoading] = useState(true);
+  const [profileError, setProfileError] = useState(false);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -36,20 +38,45 @@ export default function App() {
 
   // Auth session
   useEffect(() => {
-  if (!supabase) return;
+    if (!supabase) return;
 
-  supabase.auth.getSession().then(({ data }) => {
-    setSession(data.session);
-  });
+    let live = true;
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+      setAuthLoading(false);
+      if (!nextSession) {
+        setProfile(null);
+        setSites([]);
+        setTasks([]);
+        setExecutors([]);
+        setSelected('');
+        setLoadedFor('');
+        setProfileError(false);
+      }
+    });
 
-  const {
-    data: { subscription },
-  } = supabase.auth.onAuthStateChange((_event, session) => {
-    setSession(session);
-  });
+    void supabase.auth.getSession().then(({ data, error: sessionError }) => {
+      if (!live) return;
+      if (sessionError) {
+        console.error('Session restore error:', sessionError);
+        setError('Не удалось восстановить сессию. Войдите снова.');
+      }
+      setSession(data.session);
+      setAuthLoading(false);
+    }).catch((sessionError: unknown) => {
+      if (!live) return;
+      console.error('Session restore error:', sessionError);
+      setError('Не удалось восстановить сессию. Войдите снова.');
+      setAuthLoading(false);
+    });
 
-  return () => subscription.unsubscribe();
-}, []);
+    return () => {
+      live = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   // Load profile, objects and tasks
   useEffect(() => {
@@ -83,11 +110,20 @@ export default function App() {
 
       if (!live) return;
 
+      if (p.error || !p.data || (p.data.role !== 'manager' && p.data.role !== 'executor')) {
+        console.error('Profile loading error:', p.error);
+        setProfile(null);
+        setProfileError(true);
+        setError('Не удалось определить роль пользователя. Обратитесь к администратору.');
+        setLoadedFor(session.user.id);
+        return;
+      }
+
+      setProfileError(false);
       setError('');
 
-      if (p.error || s.error || t.error || e.error) {
+      if (s.error || t.error || e.error) {
         console.error('Supabase loading error:', {
-          profile: p.error,
           objects: s.error,
           tasks: t.error,
           executors: e.error,
@@ -96,14 +132,10 @@ export default function App() {
         setError('Не удалось загрузить данные. Проверьте права доступа.');
       }
 
-      setProfile(
-        p.data
-          ? {
-              role: p.data.role as Role,
-              display_name: session.user.email ?? '',
-            }
-          : null,
-      );
+      setProfile({
+        role: p.data.role as Role,
+        display_name: session.user.email ?? '',
+      });
 
       setSites((s.data ?? []) as Site[]);
 
@@ -130,17 +162,34 @@ export default function App() {
 
     setBusy(true);
     setError('');
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    setBusy(false);
-
-    if (error) {
-      console.error('Sign in error:', error);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        console.error('Sign in error:', error);
+        setError('Не удалось войти. Проверьте email и пароль.');
+      }
+    } catch (signInError) {
+      console.error('Sign in error:', signInError);
       setError('Не удалось войти. Проверьте email и пароль.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function signOut() {
+    if (!supabase) return;
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Sign out error:', error);
+        setError('Не удалось выйти из системы. Повторите попытку.');
+      }
+    } catch (signOutError) {
+      console.error('Sign out error:', signOutError);
+      setError('Не удалось выйти из системы. Повторите попытку.');
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -245,6 +294,10 @@ export default function App() {
     );
   }
 
+  if (authLoading) {
+    return <main className="setup"><Brand /><p>Проверяем сессию…</p></main>;
+  }
+
   // Login
   if (!session) {
     return (
@@ -321,6 +374,17 @@ export default function App() {
     );
   }
 
+  if (profileError || !profile) {
+    return (
+      <main className="setup">
+        <Brand />
+        <h1>Нет доступа к рабочему пространству</h1>
+        <p>{error || 'Профиль с допустимой ролью не найден.'}</p>
+        <button className="primary" onClick={signOut} disabled={busy}>Выйти</button>
+      </main>
+    );
+  }
+
   // Role-based data
   const mine = profile?.role === 'executor';
 
@@ -363,8 +427,8 @@ export default function App() {
             {mine ? 'Исполнитель' : 'Менеджер'}
           </small>
 
-          <button onClick={() => supabase?.auth.signOut()}>
-            Выйти ↗
+          <button onClick={signOut} disabled={busy}>
+            {busy ? 'Выходим…' : 'Выйти ↗'}
           </button>
         </div>
       </aside>
