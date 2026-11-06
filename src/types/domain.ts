@@ -15,6 +15,17 @@ export type Task = {
   status: TaskStatus
   object_id: string
   assignee_id: string | null
+  author_id: string
+  created_at: string
+}
+
+export type TaskStatusHistory = {
+  id: string
+  task_id: string
+  changed_by: string
+  from_status: TaskStatus | null
+  to_status: TaskStatus
+  comment: string | null
   created_at: string
 }
 

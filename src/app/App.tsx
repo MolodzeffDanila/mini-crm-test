@@ -7,7 +7,11 @@ import { isSupabaseConfigured, supabase } from '../lib/supabase';
 import { Brand } from '../components/Brand';
 import { TaskCard } from '../components/TaskCard';
 import { TaskForm } from '../components/TaskForm';
+import '../components/MyTasks.css';
+import { ObjectForm } from '../components/ObjectForm';
 import { changeTaskStatus, createTask, deleteTask, updateTask } from '../entities/task/api/task.api';
+import { createObject, deleteObject, updateObject } from '../entities/object/api/object.api';
+import { taskStatusLabels } from '../types/domain';
 import type { Role, Site, Task, TaskStatus } from '../types/domain';
 
 export default function App() {
@@ -24,8 +28,13 @@ export default function App() {
   const [taskFormOpen, setTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>();
   const [savingTask, setSavingTask] = useState(false);
+  const [objectFormOpen, setObjectFormOpen] = useState(false);
+  const [editingObject, setEditingObject] = useState<Site | undefined>();
+  const [savingObject, setSavingObject] = useState(false);
 
   const [selected, setSelected] = useState('');
+  const [view, setView] = useState<'objects' | 'my_tasks'>('objects');
+  const [selectedTaskId, setSelectedTaskId] = useState('');
   const [loadedFor, setLoadedFor] = useState('');
   const [authLoading, setAuthLoading] = useState(true);
   const [profileError, setProfileError] = useState(false);
@@ -101,7 +110,7 @@ export default function App() {
         supabase
           .from('tasks')
           .select(
-            'id, title, description, status, object_id, assignee_id, created_at',
+            'id, title, description, status, object_id, assignee_id, author_id, created_at',
           )
           .order('created_at', { ascending: false }),
 
@@ -217,7 +226,7 @@ export default function App() {
     const { data, error: fetchError } = await supabase
       .from('tasks')
       .select(
-        'id, title, description, status, object_id, assignee_id, created_at',
+        'id, title, description, status, object_id, assignee_id, author_id, created_at',
       )
       .order('created_at', { ascending: false });
 
@@ -249,7 +258,7 @@ export default function App() {
 
     const { data, error: reloadError } = await supabase!
       .from('tasks')
-      .select('id, title, description, status, object_id, assignee_id, created_at')
+      .select('id, title, description, status, object_id, assignee_id, author_id, created_at')
       .order('created_at', { ascending: false });
     if (reloadError) {
       console.error('Tasks reload error:', reloadError);
@@ -275,6 +284,42 @@ export default function App() {
       return;
     }
     setTasks((current) => current.filter((item) => item.id !== task.id));
+    setError('');
+  }
+
+  async function saveObject(input: { name: string; address: string }) {
+    setSavingObject(true);
+    const result = editingObject
+      ? await updateObject(editingObject.id, input)
+      : await createObject(input);
+    if (result.error) {
+      console.error('Object save error:', result.error);
+      setError('Не удалось сохранить объект. Проверьте введённые данные и права доступа.');
+      setSavingObject(false);
+      return;
+    }
+    const updated = editingObject
+      ? sites.map((item) => item.id === editingObject.id ? result.data : item)
+      : [result.data, ...sites];
+    setSites(updated);
+    setSelected(result.data.id);
+    setObjectFormOpen(false);
+    setEditingObject(undefined);
+    setSavingObject(false);
+    setError('');
+  }
+
+  async function removeObject(object: Site) {
+    if (!window.confirm(`Удалить объект «${object.name}»?`)) return;
+    const { error } = await deleteObject(object.id);
+    if (error) {
+      console.error('Object delete error:', error);
+      setError('Не удалось удалить объект. Сначала удалите связанные задачи.');
+      return;
+    }
+    const remaining = sites.filter((item) => item.id !== object.id);
+    setSites(remaining);
+    if (selected === object.id) setSelected(remaining[0]?.id ?? '');
     setError('');
   }
 
@@ -415,10 +460,12 @@ export default function App() {
 
         <p className="eyebrow">РАБОЧЕЕ ПРОСТРАНСТВО</p>
 
-        <div className="nav active">
-          ▦ {mine ? 'Мои задачи' : 'Объекты'}
-          <span>{visibleSites.length}</span>
-        </div>
+        <button className={`nav ${view === 'objects' ? 'active' : ''}`} onClick={() => setView('objects')}>
+          ▦ Объекты <span>{visibleSites.length}</span>
+        </button>
+        {mine && <button className={`nav ${view === 'my_tasks' ? 'active' : ''}`} onClick={() => setView('my_tasks')}>
+          ✓ Мои задачи <span>{visibleTasks.length}</span>
+        </button>}
 
         <div className="user">
           <b>{profile?.display_name ?? session.user.email}</b>
@@ -436,7 +483,7 @@ export default function App() {
       <main className="main">
         <header>
           Рабочее пространство /{' '}
-          <b>{mine ? 'Мои задачи' : 'Объекты'}</b>
+          <b>{mine && view === 'my_tasks' ? 'Мои задачи' : 'Объекты'}</b>
 
           <span>● Рабочий день</span>
         </header>
@@ -446,21 +493,17 @@ export default function App() {
             <div>
               <span className="eyebrow">ОБЗОР РАБОТ</span>
 
-              <h1>{mine ? 'Мои задачи' : 'Объекты'}</h1>
+              <h1>{mine && view === 'my_tasks' ? 'Мои задачи' : 'Объекты'}</h1>
 
               <p>
                 План работ и текущий статус по каждому объекту.
               </p>
             </div>
 
-            {profile?.role === 'manager' && (
-              <button
-                className="primary"
-                onClick={() => { setEditingTask(undefined); setTaskFormOpen(true); }}
-              >
-                ＋ Новая задача
-              </button>
-            )}
+            {profile?.role === 'manager' && <div className="heading-actions">
+              <button className="secondary" onClick={() => { setEditingObject(undefined); setObjectFormOpen(true); }}>＋ Новый объект</button>
+              <button className="primary" onClick={() => { setEditingTask(undefined); setTaskFormOpen(true); }} disabled={sites.length === 0}>＋ Новая задача</button>
+            </div>}
           </div>
 
           {error && (
@@ -502,7 +545,28 @@ export default function App() {
             </div>
           </div>
 
-          {visibleSites.length === 0 ? (
+          {mine && view === 'my_tasks' ? (
+            <div className="columns">
+              <section className="panel">
+                <h2>Мои задачи</h2>
+                {visibleTasks.length === 0 ? <div className="empty"><p>Назначенных задач пока нет.</p></div> : visibleTasks.map((task) => {
+                  const taskObject = sites.find((item) => item.id === task.object_id);
+                  return <button className={`task-link ${selectedTaskId === task.id ? 'chosen' : ''}`} key={task.id} onClick={() => setSelectedTaskId(task.id)}>
+                    <b>{task.title}</b><small>{taskObject?.name ?? 'Объект'} · {taskStatusLabels[task.status]}</small>
+                  </button>;
+                })}
+              </section>
+              <section className="panel detail">
+                {(() => {
+                  const task = visibleTasks.find((item) => item.id === selectedTaskId) ?? visibleTasks[0];
+                  const taskObject = sites.find((item) => item.id === task?.object_id);
+                  return task && taskObject
+                    ? <TaskCard task={task} object={taskObject} role={profile.role} act={act} />
+                    : <div className="empty"><p>Выберите задачу из списка.</p></div>;
+                })()}
+              </section>
+            </div>
+          ) : visibleSites.length === 0 ? (
             <div className="empty">
               <h2>Объектов пока нет</h2>
 
@@ -518,25 +582,16 @@ export default function App() {
                 <h2>Список объектов</h2>
 
                 {visibleSites.map((site) => (
-                  <button
-                    className={`site ${
-                      site.id === selected ? 'chosen' : ''
-                    }`}
-                    key={site.id}
-                    onClick={() => setSelected(site.id)}
-                  >
-                    <b>{site.name}</b>
-                    <small>{site.address}</small>
-
-                    <small>
-                      {
-                        visibleTasks.filter(
-                          (task) => task.object_id === site.id,
-                        ).length
-                      }{' '}
-                      задач
-                    </small>
-                  </button>
+                  <div className="site-row" key={site.id}>
+                    <button className={`site ${site.id === selected ? 'chosen' : ''}`} onClick={() => setSelected(site.id)}>
+                      <b>{site.name}</b><small>{site.address}</small>
+                      <small>{visibleTasks.filter((task) => task.object_id === site.id).length} задач</small>
+                    </button>
+                    {profile.role === 'manager' && <div className="object-actions">
+                      <button aria-label={`Редактировать объект ${site.name}`} onClick={() => { setEditingObject(site); setObjectFormOpen(true); }}>Изменить</button>
+                      <button aria-label={`Удалить объект ${site.name}`} onClick={() => void removeObject(site)}>Удалить</button>
+                    </div>}
+                  </div>
                 ))}
               </section>
 
@@ -559,6 +614,7 @@ export default function App() {
                     <TaskCard
                       key={task.id}
                       task={task}
+                      object={site!}
                       role={profile?.role}
                       act={act}
                       onEdit={(task) => { setEditingTask(task); setTaskFormOpen(true); }}
@@ -586,6 +642,9 @@ export default function App() {
           onSave={saveTask}
           onCancel={() => { setTaskFormOpen(false); setEditingTask(undefined); }}
         />
+      )}
+      {objectFormOpen && profile?.role === 'manager' && (
+        <ObjectForm object={editingObject} busy={savingObject} onSave={saveObject} onCancel={() => { setObjectFormOpen(false); setEditingObject(undefined); }} />
       )}
     </div>
   );

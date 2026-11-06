@@ -9,7 +9,7 @@ export type TaskInput = {
 }
 
 const taskFields =
-  'id, title, description, object_id, assignee_id, status, created_at'
+  'id, title, description, object_id, assignee_id, status, author_id, created_at'
 
 function getClient() {
   if (!supabase) throw new Error('Supabase is not configured')

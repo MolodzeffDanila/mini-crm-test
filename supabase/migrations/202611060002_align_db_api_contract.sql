@@ -9,6 +9,9 @@ alter table public.sites rename to objects;
 alter table public.tasks rename column site_id to object_id;
 alter index public.tasks_site_id_idx rename to tasks_object_id_idx;
 alter table public.tasks alter column description drop not null;
+alter table public.tasks drop constraint if exists tasks_site_id_fkey;
+alter table public.tasks add constraint tasks_object_id_fkey
+  foreign key (object_id) references public.objects(id) on delete restrict;
 
 alter table public.task_history rename to task_status_history;
 alter table public.task_status_history rename column changed_at to created_at;
