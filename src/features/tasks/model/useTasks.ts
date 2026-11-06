@@ -45,7 +45,7 @@ export interface UseTasksResult {
  * Управляет задачами рабочего пространства: загрузка с учётом RLS,
  * список исполнителей, создание/редактирование/удаление (только manager)
  * и смена статуса исключительно через RPC change_task_status
- * (см. CONTRACT.md, разделы 6–7).
+ * (см. docs/CONTRACT.md, разделы 6–7).
  */
 export function useTasks(session: Session | null, deps: UseTasksDeps = {}): UseTasksResult {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -130,7 +130,7 @@ export function useTasks(session: Session | null, deps: UseTasksDeps = {}): UseT
     return true;
   }
 
-  // Смена статуса задачи через RPC (см. CONTRACT.md, раздел 7)
+  // Смена статуса задачи через RPC (см. docs/CONTRACT.md, раздел 7)
   async function changeStatus(task: Task, status: TaskStatus, comment?: string) {
     if (status === 'revision' && !comment?.trim()) return;
 
